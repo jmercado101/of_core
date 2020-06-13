@@ -224,14 +224,20 @@ class MatchNwDst(MatchField):
 
     def as_of_tlv(self):
         """Return a pyof OXM TLV instance."""
-        value_bytes = IPAddress(self.value).pack()
-        return OxmTLV(oxm_field=self.oxm_field, oxm_value=value_bytes)
+        ip = IPAddress(self.value)
+        value_bytes = ip.pack()
+        if ip.netmask < 32:
+            value_bytes += mask_to_bytes(ip.netmask, 32)
+        return OxmTLV(oxm_field=self.oxm_field, oxm_hasmask = ip.netmask - 32, oxm_value=value_bytes)
 
     @classmethod
     def from_of_tlv(cls, tlv):
         """Return an instance from a pyof OXM TLV."""
         ip_address = IPAddress()
         ip_address.unpack(tlv.oxm_value)
+        value = str(ip_address)
+        if tlv.oxm_hasmask:
+            value = f'{value}/{bytes_to_mask(tlv.oxm_value[4:], 32)}'
         ip_str = str(ip_address)
         return cls(ip_str)
 
