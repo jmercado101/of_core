@@ -238,7 +238,6 @@ class MatchNwDst(MatchField):
         value = str(ip_address)
         if tlv.oxm_hasmask:
             value = f'{value}/{bytes_to_mask(tlv.oxm_value[4:], 32)}'
-        ip_str = str(ip_address)
         return cls(ip_str)
 
 
