@@ -220,7 +220,7 @@ class MatchNwDst(MatchField):
     """Match for IPV4 destination."""
 
     name = 'nw_dst'
-    oxm_field = OxmOfbMatchField.OFPXMT_OFB_IPV4=_DST
+    oxm_field = OxmOfbMatchField.OFPXMT_OFB_IPV4_DST
 
     def as_of_tlv(self):
         """Return a pyof OXM TLV instance."""
