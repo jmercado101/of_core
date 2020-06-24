@@ -12,6 +12,8 @@ from abc import ABC, abstractmethod
 from pyof.foundation.basic_types import HWAddress, IPAddress
 from pyof.v0x04.common.flow_match import OxmOfbMatchField, OxmTLV, VlanId
 
+from napps.kytos.of_core.v0x04.utils import bytes_to_mask, mask_to_bytes
+
 
 class MatchField(ABC):
     """Base class for match fields. Abstract OXM TLVs of python-openflow.
@@ -333,6 +335,83 @@ class MatchTCPDst(MatchField):
         port = int.from_bytes(tlv.oxm_value, 'big')
         return cls(port)
 
+class MatchNDTarget(MatchField):
+    """Match for IPV6 ND Target"""
+
+    name = 'nd_tar'
+    oxm_field = OxmOfbMatchField.OFPXMT_OFB_IPV6_ND_TARGET
+
+    def as_of_tlv(self):
+        """Return a pyof OXM TLV instance."""
+        value_bytes = self.value.to_bytes(16,'big')
+        return OxmTLV(oxm_field=self.oxm_field, oxm_value=value_bytes)
+    
+    @classmethod
+    def from_of_tlv(cls, tlv):
+        """Return an instance from a pyof OXM TLV."""
+        target = int.from_bytes(tlv.oxm_value, 'big')
+        return cls(target)
+
+class MatchNDSLL(MatchField):
+    """Match for IPV6 ND SLL"""
+
+    name = 'nd_sll'
+    oxm_field = OxmOfbMatchField.OFPXMT_OFB_IPV6_ND_SLL
+
+    def as_of_tlv(self):
+        """Return a pyof OXM TLV instance."""
+        value_bytes = self.value.to_bytes(6,'big')
+        return OxmTLV(oxm_field=self.oxm_field, oxm_value=value_bytes)
+    
+    @classmethod
+    def from_of_tlv(cls, tlv):
+        """Return an instance from a pyof OXM TLV."""
+        sll = int.from_bytes(tlv.oxm_value, 'big')
+        return cls(sll)
+
+class MatchNDTLL(MatchField):
+    """Match for IPV6 ND TLL"""
+
+    name = 'nd_tll'
+    oxm_field = OxmOfbMatchField.OFPXMT_OFB_IPV6_ND_TLL
+
+    def as_of_tlv(self):
+        """Return a pyof OXM TLV instance."""
+        value_bytes = self.value.to_bytes(6,'big')
+        return OxmTLV(oxm_field=self.oxm_field, oxm_value=value_bytes)
+    
+    @classmethod
+    def from_of_tlv(cls, tlv):
+        """Return an instance from a pyof OXM TLV."""
+        tll = int.from_bytes(tlv.oxm_value, 'big')
+        return cls(tll)
+
+class MatchEXTHDR(MatchField):
+    """Match for IPV6 EXTHDR"""
+
+    name = 'v6_hdr'
+    oxm_field = OxmOfbMatchField.OFPXMT_OFB_IPV6_EXTHDR
+
+    def as_of_tlv(self):
+        """Return a pyof OXM TLV instance."""
+        ip_addr = IPAddress(self.value)
+        value_bytes = ip_addr.pack()
+        if ip_addr.netmask < 9:
+            value_bytes += mask_to_bytes(ip_addr.netmask, 9)
+        return OxmTLV(oxm_field=self.oxm_field,
+                      oxm_hasmask=ip_addr.netmask < 9,
+                      oxm_value=value_bytes)
+
+    @classmethod
+    def from_of_tlv(cls, tlv):
+        """Return an instance from a pyof OXM TLV."""
+        ip_address = IPAddress()
+        ip_address.unpack(tlv.oxm_value)
+        addr_str = str(ip_address)
+        value = addr_str
+        if tlv.oxm_hasmask:
+            value = f'{addr_str}/{bytes_to_mask(tlv.oxm_value[2:], 9)}'
+        return cls(value)
 
 class MatchFieldFactory(ABC):
     """Create the correct MatchField subclass instance.
