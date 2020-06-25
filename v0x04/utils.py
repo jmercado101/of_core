@@ -128,7 +128,8 @@ def say_hello(controller, connection):
     hello = Hello()
     emit_message_out(controller, connection, hello)
 
-    def mask_to_bytes(mask, size):
+
+def mask_to_bytes(mask, size):
     """Return the mask in bytes."""
     bits = 0
     for i in range(size-mask, size):
