@@ -394,23 +394,30 @@ class MatchEXTHDR(MatchField):
 
     def as_of_tlv(self):
         """Return a pyof OXM TLV instance."""
-        ip_addr = IPAddress(self.value)
-        value_bytes = ip_addr.pack()
-        if ip_addr.netmask < 9:
-            value_bytes += mask_to_bytes(ip_addr.netmask, 9)
+        try:
+            value = int(self.value)
+            mask = None
+            oxm_hasmask = False
+        except ValueError:
+            value, mask = map(int, self.value.split('/'))
+            oxm_hasmask = True
+        value = value | VlanId.OFPVID_PRESENT
+        value_bytes = value.to_bytes(9, 'big')
+        if mask:
+            mask = mask | VlanId.OFPVID_PRESENT
+            value_bytes += mask.to_bytes(9, 'big')
         return OxmTLV(oxm_field=self.oxm_field,
-                      oxm_hasmask=ip_addr.netmask < 9,
+                      oxm_hasmask=oxm_hasmask,
                       oxm_value=value_bytes)
 
     @classmethod
     def from_of_tlv(cls, tlv):
         """Return an instance from a pyof OXM TLV."""
-        ip_address = IPAddress()
-        ip_address.unpack(tlv.oxm_value)
-        addr_str = str(ip_address)
-        value = addr_str
+        vlan_id = int.from_bytes(tlv.oxm_value[:9], 'big') & 4095
+        value = vlan_id
         if tlv.oxm_hasmask:
-            value = f'{addr_str}/{bytes_to_mask(tlv.oxm_value[2:], 9)}'
+            vlan_mask = int.from_bytes(tlv.oxm_value[9:], 'big') & 4095
+            value = f'{vlan_id}/{vlan_mask}'
         return cls(value)
 
 class MatchFieldFactory(ABC):
