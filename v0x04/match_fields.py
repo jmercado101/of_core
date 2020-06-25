@@ -243,27 +243,6 @@ class MatchNwDst(MatchField):
         return cls(ip_str)
 
 
-def mask_to_bytes(mask, size):
-    bits = 0
-    for i in range(size-mask,size):
-        bits |= (1 << i)
-    tobytes = bits.to_bytes(size//8, 'big')
-    return tobytes
-
-def bytes_to_mask(tobytes, size):
-    mask_int = int.to_bytes(tobytes,'big')
-    bits = bin(mask_int)
-    strbits = str(bits)
-    strbits = strbits[2:]
-    netmask = 0
-    for i in range(size):
-        if strbits[i] == '1':
-            netmask += 1
-        else:
-            break
-    return netmask
-    
-
 class MatchNwProto(MatchField):
     """Match for IP protocol."""
 
