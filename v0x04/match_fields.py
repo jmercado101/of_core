@@ -415,9 +415,9 @@ class MatchEXTHDR(MatchField):
         except ValueError:
             value, mask = map(int, self.value.split('/'))
             oxm_hasmask = True
-        value_bytes = value.to_bytes(9, 'big')
+        value_bytes = value.to_bytes(2, 'big')
         if mask:
-            value_bytes += mask.to_bytes(9, 'big')
+            value_bytes += mask.to_bytes(2, 'big')
         return OxmTLV(oxm_field=self.oxm_field,
                       oxm_hasmask=oxm_hasmask,
                       oxm_value=value_bytes)
@@ -425,9 +425,9 @@ class MatchEXTHDR(MatchField):
     @classmethod
     def from_of_tlv(cls, tlv):
         """Return an instance from a pyof OXM TLV."""
-        value = int.from_bytes(tlv.oxm_value[:4],'big')
+        value = int.from_bytes(tlv.oxm_value[:2],'big')
         if tlv.oxm_hasmask:
-            exhead_mask = int.from_bytes(tlv.oxm_value[9:], 'big')
+            exhead_mask = int.from_bytes(tlv.oxm_value[2:], 'big')
             value = f'{value}/{exhead_mask}'
         return cls(value)
 
